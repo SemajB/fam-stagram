@@ -8,6 +8,7 @@ const http = require('http');
 const session = require('express-session');
 const dotenv = require('dotenv');
 const sgMail = require('@sendgrid/mail');
+const Socket = require('socket.io');
 const db = require('../db/index');
 const userInViews = require('./middleware/userInViews');
 const authRouter = require('./routes/auth');
@@ -18,6 +19,9 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 
 const app = express();
+const server = http.createServer(app);
+const io = Socket(server);
+
 dotenv.config();
 const PORT = 3000;
 const database = require('../db/index.js');
@@ -59,10 +63,26 @@ app.use('/', authRouter);
 app.use('/', indexRouter);
 app.use('/', usersRouter);
 
+////-----------------------------------------------------------------------------
+//                            Socket.IO:
+////-----------------------------------------------------------------------------
 
-// /////////////////////////////////////////////////////////////////
-// ROUTE/PAGE LOADING:
-// /////////////////////////////////////////////////////////////////
+io.on('connection', (socket) => {
+  console.log('User connected');
+  socket.on('disconnect', () => {
+    console.log('User disconected');
+  });
+
+  socket.on('message', (message) => { // Event handler for 'message' event
+    io.emit('message', message); // When event recived emit event to all listening sokects || connected users
+  });
+
+  socket.on
+})
+
+////-----------------------------------------------------------------------------
+//                            ROUTE/PAGE LOADING:
+////-----------------------------------------------------------------------------
 
 const upload = multer({
   dest: __dirname + "/pictures/raw"
@@ -254,6 +274,6 @@ app.post('/sendEmail', (req, res) => {
   res.end();
 });
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`app listening on ${PORT}!`);
 });
